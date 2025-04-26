@@ -6,5 +6,5 @@ How to contribute:
 
 * Create a virtual enviroment and activate it
 * `pip install -r requirements.txt`
-* `cd ea_assignment_hint_B`
+* `cd EA-app-builder-project`
 * `fabmanager run`
