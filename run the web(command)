@@ -1,1 +1,2 @@
-command is the python run.py (can run the web)
+type <source .env/bin/activate> (without<>) first
+run the web use python run.py (port 8080) or flask run (port 5000)
