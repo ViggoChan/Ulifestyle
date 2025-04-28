@@ -4,6 +4,7 @@ from flask_appbuilder import AppBuilder, SQLA
 from sqlalchemy.engine import Engine
 from sqlalchemy import event
 from .indexview import FABView
+from flask_migrate import Migrate
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s:%(name)s:%(message)s')
 logging.getLogger().setLevel(logging.DEBUG)
@@ -24,9 +25,9 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
     cursor.close()
     
 
-from app import views, data
+from app import views
 
 db.create_all()
 #data.fill_gender()
 #data.fill_data()
-
+migrate = Migrate(app, db)

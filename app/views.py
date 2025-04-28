@@ -1,93 +1,74 @@
 from flask_appbuilder import ModelView
-from flask_appbuilder.fieldwidgets import Select2Widget
 from flask_appbuilder.models.sqla.interface import SQLAInterface
-from .models import Employee,Department, Function, EmployeeHistory, Benefit, MenuItem, MenuCategory, News, NewsCategory
-from wtforms.ext.sqlalchemy.fields import QuerySelectField
+from .models import (User, UserProfile, HealthMetric, FitnessActivity, 
+                    NutritionLog, SleepRecord, WellnessGoal, 
+                    CommunityPost, Appointment, Professional)
 from app import appbuilder, db
-from flask_appbuilder.baseviews import expose, BaseView
 
 
-def department_query():
-    return db.session.query(Department)
+class UserProfileView(ModelView):
+    datamodel = SQLAInterface(UserProfile)
+    list_columns = ['user', 'fitness_level', 'dietary_preferences']
+    show_template = 'appbuilder/general/model/show_custom.html'
+    
+class UserView(ModelView):
+    datamodel = SQLAInterface(User)
+    list_columns = ['username', 'email', 'active']
+    add_columns = ['username', 'email', 'active']
+    edit_columns = ['username', 'email', 'active']
+    related_views = [UserProfileView]
 
+class HealthMetricView(ModelView):
+    datamodel = SQLAInterface(HealthMetric)
+    list_columns = ['user', 'metric_type', 'value', 'recorded_at']
+    add_columns = ['user', 'metric_type', 'value']
 
-class EmployeeHistoryView(ModelView):
-    datamodel = SQLAInterface(EmployeeHistory)
-    #base_permissions = ['can_add', 'can_show']
-    list_columns = ['department', 'begin_date', 'end_date']
+class FitnessActivityView(ModelView):
+    datamodel = SQLAInterface(FitnessActivity)
+    list_columns = ['user', 'activity_type', 'duration', 'calories_burned']
+    show_fieldsets = [
+        ('Summary', {'fields': ['user', 'activity_type']}),
+        ('Details', {'fields': ['duration', 'calories_burned', 'activity_date']})
+    ]
 
+class NutritionLogView(ModelView):
+    datamodel = SQLAInterface(NutritionLog)
+    list_columns = ['user', 'meal_type', 'calories', 'logged_at']
+    search_columns = ['meal_type', 'logged_at']
 
-class EmployeeView(ModelView):
-    datamodel = SQLAInterface(Employee)
+class SleepRecordView(ModelView):
+    datamodel = SQLAInterface(SleepRecord)
+    list_columns = ['user', 'sleep_quality', 'duration', 'bedtime']
+    add_columns = ['user', 'sleep_quality', 'duration', 'bedtime', 'wake_time']
 
-    list_columns = ['full_name', 'department.name', 'employee_number']
-    edit_form_extra_fields = {'department':  QuerySelectField('Department',
-                                query_factory=department_query,
-                                widget=Select2Widget(extra_classes="readonly"))}
+class WellnessGoalView(ModelView):
+    datamodel = SQLAInterface(WellnessGoal)
+    list_columns = ['user', 'goal_type', 'target_value', 'current_value', 'completed']
+    edit_columns = ['goal_type', 'target_value', 'current_value', 'deadline', 'completed']
 
+class CommunityPostView(ModelView):
+    datamodel = SQLAInterface(CommunityPost)
+    list_columns = ['user', 'content', 'post_date', 'likes']
+    add_columns = ['user', 'content']
 
-    related_views = [EmployeeHistoryView]
-    show_template = 'appbuilder/general/model/show_cascade.html'
+class AppointmentView(ModelView):
+    datamodel = SQLAInterface(Appointment)
+    list_columns = ['user', 'professional', 'appointment_type', 'scheduled_time', 'status']
+    add_columns = ['user', 'professional', 'appointment_type', 'scheduled_time', 'duration']
 
+class ProfessionalView(ModelView):
+    datamodel = SQLAInterface(Professional)
+    list_columns = ['name', 'specialty', 'contact']
 
-class FunctionView(ModelView):
-    datamodel = SQLAInterface(Function)
-    related_views = [EmployeeView]
-
-
-class DepartmentView(ModelView):
-    datamodel = SQLAInterface(Department)
-    related_views = [EmployeeView]
-
-
-class BenefitView(ModelView):
-    datamodel = SQLAInterface(Benefit)
-    add_columns = ['name']
-    edit_columns = ['name']
-    show_columns = ['name']
-    list_columns = ['name']
-
-class MenuItemView(ModelView):
-    datamodel = SQLAInterface(MenuItem)
-    list_columns = ['id', 'name', 'link', 'menu_category_id']
-
-class MenuCategoryView(ModelView):
-    datamodel = SQLAInterface(MenuCategory)
-    list_columns = ['id', 'name']
-
-class NewsView(ModelView):
-    datamodel = SQLAInterface(News)
-    list_columns = ['id', 'title', 'content', 'date', 'newsCat_id']
-
-class NewsCategoryView(ModelView):
-    datamodel = SQLAInterface(NewsCategory)
-    list_columns = ['id', 'name']
-
-class NewsPageView(BaseView):
-    default_view = 'local_news'
-
-    @expose('/local_news/')
-    def local_news(self):
-        param1 = 'Local News'
-        self.update_redirect()
-        return self.render_template('news.html', param1 = param1)
-
-    @expose('/global_news/')
-    def global_news(self):
-        param1 = 'Global News'
-        self.update_redirect()
-        return self.render_template('news.html', param1=param1)
-
+appbuilder.add_view(UserProfileView, 'UserProfile', category="User")
+appbuilder.add_view(UserView, 'User', category="User")
+appbuilder.add_view(HealthMetricView, 'HealthMetric', category="User")
+appbuilder.add_view(FitnessActivityView, 'FitnessActivity', category="FitnessActivity")
+appbuilder.add_view(NutritionLogView, 'NutritionLog', category="NutritionLog")
+appbuilder.add_view(SleepRecordView, 'SleepRecord', category="SleepRecord")
+appbuilder.add_view(WellnessGoalView, 'WellnessGoal', category="Goal")
+appbuilder.add_view(CommunityPostView, 'Post', category="community")
+appbuilder.add_view(AppointmentView, 'Appointment', category="Appointment")
+appbuilder.add_view(ProfessionalView, "Professional", category="Professional")
 
 db.create_all()
-
-""" Page View """
-appbuilder.add_view(NewsPageView, 'Local News', category="News")
-appbuilder.add_link("Global News", href="/newspageview/global_news/", category="News")
-
-""" Custom Views """
-appbuilder.add_view(MenuItemView, "MenuItem", icon="fa-folder-open-o", category="Admin")
-appbuilder.add_view(MenuCategoryView, "MenuCategory", icon="fa-folder-open-o", category="Admin")
-appbuilder.add_view(NewsView, "News", icon="fa-folder-open-o", category="Admin")
-appbuilder.add_view(NewsCategoryView, "NewsCategory", icon="fa-folder-open-o", category="Admin")
-

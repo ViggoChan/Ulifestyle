@@ -1,108 +1,114 @@
-import datetime
-from sqlalchemy import Table, Column, Integer, String, ForeignKey, Date, Text
-from sqlalchemy.orm import relationship
 from flask_appbuilder import Model
+from sqlalchemy import Column, Integer, String, Text, Float, Boolean, DateTime, Date, ForeignKey
+from sqlalchemy.orm import relationship
+from datetime import datetime
 
-class Gender(Model):
+class User(Model):
     id = Column(Integer, primary_key=True)
-    name = Column(String(50), unique = True, nullable=False)
+    username = Column(String(50), unique=True, nullable=False)
+    email = Column(String(120), unique=True, nullable=False)
+    password_hash = Column(String(128))
+    registered_on = Column(DateTime, default=datetime.utcnow)
+    active = Column(Boolean(), default=True)
+    
+    # Relationships
+    profile = relationship("app.models.UserProfile", back_populates="user", uselist=False)
+    health_metrics = relationship("app.models.HealthMetric", back_populates="user")
+    activities = relationship("app.models.FitnessActivity", back_populates="user")
+    nutrition_logs = relationship("app.models.NutritionLog", back_populates="user")
+    sleep_records = relationship("SleepRecord", back_populates="user")
+    goals = relationship("app.models.WellnessGoal", back_populates="user")
+    posts = relationship("app.models.CommunityPost", back_populates="user")
+    appointments = relationship("app.models.Appointment", back_populates="user")
 
-    def __repr__(self):
-        return self.name
-
-class Country(Model):
+class UserProfile(Model):
     id = Column(Integer, primary_key=True)
-    name = Column(String(50), unique = True, nullable=False)
+    user_id = Column(Integer, ForeignKey('user.id'))
+    full_name = Column(String(100))
+    bio = Column(Text)
+    avatar = Column(String(255))
+    fitness_level = Column(String(50))
+    dietary_preferences = Column(String(100))
+    
+    user = relationship("app.models.User", back_populates="profile")
 
-    def __repr__(self):
-        return self.name
-
-class Department(Model):
+class HealthMetric(Model):
     id = Column(Integer, primary_key=True)
-    name = Column(String(50), unique=True, nullable=False)
+    user_id = Column(Integer, ForeignKey('user.id'))
+    metric_type = Column(String(50))
+    value = Column(Float)
+    recorded_at = Column(DateTime, default=datetime.utcnow)
+    
+    user = relationship("app.models.User", back_populates="health_metrics")
 
-    def __repr__(self):
-        return self.name
-
-
-class Function(Model):
+class FitnessActivity(Model):
     id = Column(Integer, primary_key=True)
-    name = Column(String(50), unique=True, nullable=False)
+    user_id = Column(Integer, ForeignKey('user.id'))
+    activity_type = Column(String(50))
+    duration = Column(Integer)
+    calories_burned = Column(Integer)
+    activity_date = Column(Date)
+    
+    user = relationship("app.models.User", back_populates="activities")
 
-    def __repr__(self):
-        return self.name
-
-
-class Benefit(Model):
+class NutritionLog(Model):
     id = Column(Integer, primary_key=True)
-    name = Column(String(50), unique=True, nullable=False)
+    user_id = Column(Integer, ForeignKey('user.id'))
+    meal_type = Column(String(50))
+    calories = Column(Integer)
+    protein = Column(Integer)
+    carbs = Column(Integer)
+    fats = Column(Integer)
+    logged_at = Column(DateTime, default=datetime.utcnow)
+    
+    user = relationship("app.models.User", back_populates="nutrition_logs")
 
-    def __repr__(self):
-        return self.name
-
-assoc_benefits_employee = Table('benefits_employee', Model.metadata,
-                                  Column('id', Integer, primary_key=True),
-                                  Column('benefit_id', Integer, ForeignKey('benefit.id')),
-                                  Column('employee_id', Integer, ForeignKey('employee.id'))
-)
-
-
-def today():
-    return datetime.datetime.today().strftime('%Y-%m-%d')
-
-
-class EmployeeHistory(Model):
+class SleepRecord(Model):
     id = Column(Integer, primary_key=True)
-    department_id = Column(Integer, ForeignKey('department.id'), nullable=False)
-    department = relationship("Department")
-    employee_id = Column(Integer, ForeignKey('employee.id'), nullable=False)
-    employee = relationship("Employee")
-    begin_date = Column(Date, default=today)
-    end_date = Column(Date)
+    user_id = Column(Integer, ForeignKey('user.id'))
+    sleep_quality = Column(Integer)
+    duration = Column(Float)
+    bedtime = Column(DateTime)
+    wake_time = Column(DateTime)
+    
+    user = relationship("app.models.User", back_populates="sleep_records")
 
-
-class Employee(Model):
+class WellnessGoal(Model):
     id = Column(Integer, primary_key=True)
-    full_name = Column(String(150), nullable=False)
-    address = Column(Text(250), nullable=False)
-    fiscal_number = Column(Integer, nullable=False)
-    employee_number = Column(Integer, nullable=False)
-    department_id = Column(Integer, ForeignKey('department.id'), nullable=False)
-    department = relationship("Department")
-    function_id = Column(Integer, ForeignKey('function.id'), nullable=False)
-    function = relationship("Function")
-    benefits = relationship('Benefit', secondary=assoc_benefits_employee, backref='employee')
+    user_id = Column(Integer, ForeignKey('user.id'))
+    goal_type = Column(String(50))
+    target_value = Column(Float)
+    current_value = Column(Float)
+    deadline = Column(Date)
+    completed = Column(Boolean, default=False)
+    
+    user = relationship("app.models.User", back_populates="goals")
 
-    begin_date = Column(Date, default=datetime.date.today(), nullable=True)
-    end_date = Column(Date, default=datetime.date.today(), nullable=True)
-
-    def __repr__(self):
-        return self.full_name
-
-class MenuItem(Model):
-    __tablename__ = 'menu_item'
+class CommunityPost(Model):
     id = Column(Integer, primary_key=True)
-    name = Column(String(50), nullable=False)
-    link = Column(String(150), nullable=False)
-    menu_category_id = Column(Integer, ForeignKey('menu_category.id'), nullable=False)
-    menu_category = relationship("MenuCategory")
+    user_id = Column(Integer, ForeignKey('user.id'))
+    content = Column(Text)
+    post_date = Column(DateTime, default=datetime.utcnow)
+    likes = Column(Integer, default=0)
+    
+    user = relationship("app.models.User", back_populates="posts")
 
-class MenuCategory(Model):
-    __tablename__ = 'menu_category'
+class Appointment(Model):
     id = Column(Integer, primary_key=True)
-    name = Column(String(50), nullable=False)
+    user_id = Column(Integer, ForeignKey('user.id'))
+    professional_id = Column(Integer, ForeignKey('professional.id'))
+    appointment_type = Column(String(100))
+    scheduled_time = Column(DateTime)
+    duration = Column(Integer)
+    status = Column(String(20))
+    
+    user = relationship("app.models.User", back_populates="appointments")
+    professional = relationship("app.models.Professional")
 
-
-class News(Model):
-    __tablename__ = 'news'
+class Professional(Model):
     id = Column(Integer, primary_key=True)
-    title = Column(String(50), nullable=False)
-    content = Column(String(500), nullable=False)
-    date = Column(Date, default=datetime.date.today(), nullable=True)
-    newsCat_id = Column(Integer, ForeignKey('news_category.id'), nullable=False)
-    newsCat = relationship("NewsCategory")
-
-class NewsCategory(Model):
-    __tablename__ = 'news_category'
-    id = Column(Integer, primary_key=True)
-    name = Column(String(50), nullable=False)
+    name = Column(String(100))
+    specialty = Column(String(100))
+    contact = Column(String(100))
+    
+    appointments = relationship("app.models.Appointment", back_populates="professional")
